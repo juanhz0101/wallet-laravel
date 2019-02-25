@@ -21,6 +21,14 @@ class Client extends Authenticatable
         'cell_phone',
     ];
 
+    /**
+     * Regresar las billeteras de un cliente.
+     */
+    public function wallets()
+    {
+        return $this->hasMany('App\Wallet');
+    }
+
     public static function validateClient($request)
     {
 
