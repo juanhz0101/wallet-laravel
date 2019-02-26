@@ -191,6 +191,11 @@ class WalletController extends Controller
                             //7. Descontar pago de la billetera y cambiar estado de solicitud
                             $real_balance = ($wallet->balance - $payment->amount_payment);                  $wallet->balance = $real_balance;
                             $wallet->save();
+
+                            //Cambiar estado de pago a confirmado
+                            $payment->status = 1;
+                            $payment->save();
+
                             $data = "Solicitud de pago verificada correctamente";
                         }else{
                             $success = false;
