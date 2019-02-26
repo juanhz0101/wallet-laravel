@@ -6,6 +6,7 @@ use Mail;
 use App\Client;
 use App\Wallet;
 use App\Payment;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -42,13 +43,13 @@ class WalletController extends Controller
                 $data = "Su recarga se ha realizado correctamente";
             }else{
                 $success = false;
-                $cod_error = 04;
-                $message_error = "error: Esta billetera actualmente no existe";
+                $cod_error = 400;
+                $message_error = "error: Recarga no procesada, esta billetera actualmente no existe";
                 $status_code = 400;
             }
         } catch (\Throwable $th) {
             $success = false;
-            $cod_error = 03;
+            $cod_error = 300;
             $message_error = "error: Lo sentimos, no se realizo la carga en su billetera \n ". $th->getMessage();
             $status_code = 500;
         }
@@ -80,8 +81,7 @@ class WalletController extends Controller
             $client_bill = Client::where([
                 "document" => $request->document,
                 "cell_phone" => $request->cell_phone
-            ])->first();
-            
+            ])->first();            
             
             //1.1 Validar si son validos los parametros de consulta del cliente
             if (!empty($client_bill)) {
@@ -116,23 +116,112 @@ class WalletController extends Controller
                             ->subject('Servicio de billetera - Solicitud de pago');
                     });
 
+                    $data = "Solicitud de verificación de pago creada correctamente";
+
                 }else{
                     $success = false;
-                    $cod_error = 05;
+                    $cod_error = 700;
                     $message_error = "error: Esta billetera tiene fondos insuficientes - pre-validación";
                     $status_code = 400;
                 }
 
             }else{
                 $success = false;
-                $cod_error = 04;
-                $message_error = "error: Esta billetera actualmente no existe";
+                $cod_error = 600;
+                $message_error = "error: Solicitud de pago no procesada, esta billetera actualmente no existe";
                 $status_code = 400;
             }
         } catch (\Throwable $th) {
             $success = false;
-            $cod_error = 03;
-            $message_error = "error: Lo sentimos, no se realizo la carga en su billetera \n ". $th->getMessage();
+            $cod_error = 500;
+            $message_error = "error: Lo sentimos, no se pudo crear la solicitud de pago a su billetera \n ". $th->getMessage();
+            $status_code = 500;
+        }
+        return response()->json([
+            'success' => $success,
+            'cod_error' => $cod_error,
+            'message_error' => $message_error,
+            'data' => $data
+        ],$status_code);       
+    }
+    /**
+     * Confirmar pago.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     */
+    public function payCheck(Request $request)
+    {
+        //Estado inicial de variables de respuesta
+        $success = true;
+        $cod_error = 00;
+        $message_error = "";
+        $data = null;
+        $status_code = 200;
+ 
+        try 
+        {
+            //1. Consultar pago por confirmar
+            $payment = Payment::where([
+                "id" => $request->session_payment,
+                "token_payment" => $request->token_payment
+            ])->first();
+
+            //1.1 Validar si son validos los parametros de consulta del pago
+            if (!empty($payment)) {
+
+                //3. Verificar estado de solicitud en "pendiente" = 0
+                if ($payment->status == 0) {
+
+                    //4. Validar que el tiempo de expiracion del pago sea menor a 30 minutos               
+                    //convertimos la fecha de creacion de solicitud a objeto Carbon
+                    $created = new \Carbon\Carbon($payment->created_at);
+                     //convertimos la fecha actual a objeto Carbon
+                    $now = Carbon::now();
+                    //de esta manera sacamos la diferencia en minutos
+                    $minutesDiff = $created->diffInMinutes($now);
+
+                    if ($minutesDiff <= 30) {
+
+                        //5. Consultar la billetera que sera utilizada para descontar el dinero
+                        $wallet = Wallet::findOrFail($payment->wallet_id);
+
+                        //6. Post validacion de saldo disponible para realizar el pago
+                        if ($wallet->balance > $payment->amount_payment) {       
+
+                            //7. Descontar pago de la billetera y cambiar estado de solicitud
+                            $real_balance = ($wallet->balance - $payment->amount_payment);                  $wallet->balance = $real_balance;
+                            $wallet->save();
+                            $data = "Solicitud de pago verificada correctamente";
+                        }else{
+                            $success = false;
+                            $cod_error = 130;
+                            $message_error = "error: Esta billetera tiene fondos insuficientes - post-validación";
+                            $status_code = 400;
+                        }
+                    }else{
+                        $success = false;
+                        $cod_error = 120;
+                        $message_error = "error: Esta solicitud de pago ya expiro, por favor genere una nueva";
+                        $status_code = 400;
+                    }
+                }else if ($payment->status == 1){
+                    $success = false;
+                    $cod_error = 110;
+                    $message_error = "error: Esta solicitud de pago ya fue confirmada";
+                    $status_code = 400;
+                }              
+
+            }else{
+                $success = false;
+                $cod_error = 900;
+                $message_error = "error: Este pago por confirmar no existe";
+                $status_code = 400;
+            }            
+            
+        } catch (\Throwable $th) {
+            $success = false;
+            $cod_error = 800;
+            $message_error = "error: Lo sentimos, no se realizo la confirmación del pago \n ". $th->getMessage();
             $status_code = 500;
         }
         return response()->json([

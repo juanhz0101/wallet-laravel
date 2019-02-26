@@ -13,8 +13,10 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::resource('clients', 'API\ClientController');
+Route::post('clients/create', 'API\ClientController@store')->name('clients.store');
+Route::get('clients/wallet/balance', 'API\ClientController@balance')->name('clients.balance');
+
 
 Route::post('wallets/charge', 'API\WalletController@charge')->name('wallets.charge');
-
 Route::post('wallets/payrequest', 'API\WalletController@payRequest')->name('wallets.payRequest');
+Route::post('wallets/paycheck', 'API\WalletController@payCheck')->name('wallets.payCheck');
