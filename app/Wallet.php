@@ -23,4 +23,12 @@ class Wallet extends Model
     {
         return $this->belongsTo('App\Client');
     }
+
+    /**
+     * Regresar los pagos de un cliente.
+     */
+    public function payments()
+    {
+        return $this->hasMany('App\Payment');
+    }
 }

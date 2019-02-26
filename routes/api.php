@@ -16,3 +16,5 @@ use Illuminate\Http\Request;
 Route::resource('clients', 'API\ClientController');
 
 Route::post('wallets/charge', 'API\WalletController@charge')->name('wallets.charge');
+
+Route::post('wallets/payrequest', 'API\WalletController@payRequest')->name('wallets.payRequest');
