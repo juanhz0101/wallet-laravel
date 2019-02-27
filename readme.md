@@ -1,6 +1,6 @@
-## Servicio Web - Billetera Virtual
+## Servicio Rest Backend - Billetera Virtual
 
-Servicio Web configurado para realizar operaciones a nivel de base de datos, a continuacion se relaciona el conjunto de funcionalidades:
+Servicio configurado para realizar operaciones a nivel de base de datos, a continuacion se relaciona el conjunto de funcionalidades:
 
 - Registrar cliente
 - Recargar billetera de cliente
@@ -37,8 +37,13 @@ Estados de Pago
 0 -> pendiente por confirmar
 1 -> confirmado
 
-##Datos de Configuración
+## Datos de Configuración
 
-Crendeciales Email
+**Información del servicio**
+- Tecnologias: PHP,MySQL
+- Dirección IP: 67.207.81.224
+- Servicio de nube: Digitalocean
+
+**Crendeciales Email**
 - correo: walletnotify01@gmail.com
 - pass: Walletnotify01*
